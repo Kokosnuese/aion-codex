@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atreia Codex — AION Datenbank</title>
+<style>
+  :root{
+    --bg:#0c0f17;          /* night-aether */
+    --bg2:#10141f;
+    --panel:#161c2a;
+    --panel2:#1c2435;
+    --line:#27304708;
+    --hair:#2a3349;
+    --ink:#e9ecf5;         /* near-white */
+    --mut:#8b95ac;         /* muted */
+    --faint:#5b647c;
+    --gold:#d9b873;        /* celestial gold */
+    --cyan:#5fd0e6;        /* aether cyan accent */
+    --cyan-dim:#2c6470;
+    /* AION rarity */
+    --q-common:#c7ccd9;
+    --q-rare:#5fbf63;
+    --q-unique:#e3b13c;
+    --q-legend:#e07f37;
+    --q-epic:#b369d8;
+    --q-mythic:#e2574c;
+    --radius:9px;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(1200px 600px at 78% -8%, #1a2238 0%, transparent 60%),
+      radial-gradient(900px 500px at 12% 4%, #15202e 0%, transparent 55%),
+      var(--bg);
+    color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;
+    -webkit-font-smoothing:antialiased;min-height:100vh;
+  }
+  a{color:var(--cyan);text-decoration:none}
+
+  /* ---- masthead ---- */
+  header.mast{
+    position:sticky;top:0;z-index:40;
+    background:linear-gradient(180deg,rgba(12,15,23,.97),rgba(12,15,23,.82));
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--hair);
+  }
+  .mast-in{max-width:1240px;margin:0 auto;padding:14px 22px 0}
+  .brand{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}
+  .brand h1{
+    font-family:var(--serif);font-weight:600;font-size:27px;letter-spacing:.06em;
+    margin:0;color:var(--ink);
+  }
+  .brand h1 .a{color:var(--gold)}
+  .brand .sub{color:var(--faint);font-size:12px;letter-spacing:.22em;text-transform:uppercase}
+  .brand .spacer{flex:1}
+  .lang{display:flex;border:1px solid var(--hair);border-radius:999px;overflow:hidden}
+  .lang button{
+    background:transparent;border:0;color:var(--mut);font-family:var(--sans);
+    padding:6px 15px;font-size:12px;letter-spacing:.08em;cursor:pointer;font-weight:600;
+  }
+  .lang button.on{background:var(--cyan);color:#06222a}
+  /* tabs */
+  nav.tabs{display:flex;gap:2px;margin-top:14px}
+  nav.tabs button{
+    background:transparent;border:0;border-bottom:2px solid transparent;
+    color:var(--mut);font-family:var(--sans);font-size:14px;font-weight:600;
+    padding:11px 18px 12px;cursor:pointer;letter-spacing:.02em;display:flex;gap:8px;align-items:center;
+  }
+  nav.tabs button .cnt{
+    font-family:var(--mono);font-size:11px;color:var(--faint);
+    background:var(--panel);border-radius:5px;padding:1px 6px;
+  }
+  nav.tabs button:hover{color:var(--ink)}
+  nav.tabs button.on{color:var(--gold);border-bottom-color:var(--gold)}
+  nav.tabs button.on .cnt{color:var(--gold)}
+
+  /* ---- controls ---- */
+  .controls{max-width:1240px;margin:18px auto 0;padding:0 22px;
+    display:grid;grid-template-columns:1fr;gap:12px}
+  .searchrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .search{flex:1;min-width:220px;position:relative}
+  .search input{
+    width:100%;background:var(--panel);border:1px solid var(--hair);border-radius:var(--radius);
+    color:var(--ink);padding:11px 14px 11px 38px;font-size:14px;font-family:var(--sans);
+  }
+  .search input:focus{outline:2px solid var(--cyan-dim);border-color:var(--cyan-dim)}
+  .search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:.5}
+  select,.mini{
+    background:var(--panel);border:1px solid var(--hair);border-radius:var(--radius);
+    color:var(--ink);padding:10px 12px;font-size:13px;font-family:var(--sans);cursor:pointer;
+  }
+  select:focus{outline:2px solid var(--cyan-dim)}
+  .lvl{display:flex;align-items:center;gap:6px;color:var(--mut);font-size:13px}
+  .lvl input{width:62px;background:var(--panel);border:1px solid var(--hair);border-radius:7px;
+    color:var(--ink);padding:9px 8px;font-family:var(--mono);font-size:13px}
+
+  /* class chips */
+  .classes{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+  .classes .grp-label{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin-right:2px}
+  .chip{
+    background:var(--panel);border:1px solid var(--hair);border-radius:999px;
+    color:var(--mut);padding:6px 13px;font-size:12.5px;cursor:pointer;font-weight:600;
+    transition:background .12s,color .12s,border-color .12s;
+  }
+  .chip:hover{color:var(--ink);border-color:var(--cyan-dim)}
+  .chip.on{background:var(--cyan);color:#06222a;border-color:var(--cyan)}
+  .chip.all.on{background:var(--gold);color:#241c08;border-color:var(--gold)}
+  .chip .base{opacity:.55;font-weight:400;font-size:11px}
+
+  /* ---- result meta ---- */
+  .meta{max-width:1240px;margin:14px auto 0;padding:0 22px;display:flex;align-items:center;gap:14px;
+    color:var(--faint);font-size:12.5px;letter-spacing:.03em}
+  .meta b{color:var(--cyan);font-family:var(--mono);font-weight:600}
+
+  /* ---- list ---- */
+  .list{max-width:1240px;margin:8px auto 60px;padding:0 22px}
+  .head-row,.row{
+    display:grid;grid-template-columns:46px minmax(180px,1fr) 64px 140px 1fr 150px;
+    gap:14px;align-items:center;
+  }
+  .head-row{
+    padding:9px 14px;color:var(--faint);font-size:11px;letter-spacing:.13em;text-transform:uppercase;
+    border-bottom:1px solid var(--hair);position:sticky;top:0;
+  }
+  .row{
+    padding:9px 14px;border-bottom:1px solid #1b2233;cursor:pointer;
+    transition:background .1s;
+  }
+  .row:hover{background:var(--panel)}
+  .row.open{background:var(--panel2)}
+  .ic{width:42px;height:42px;border-radius:7px;background:#0a0d14;border:1px solid #222b40;
+    object-fit:cover;display:block}
+  .ic.ph{display:flex;align-items:center;justify-content:center;color:var(--faint);font-size:9px;font-family:var(--mono)}
+  .nm{font-weight:600;line-height:1.3}
+  .nm .raw{color:var(--faint);font-weight:400;font-style:italic}
+  .lv{font-family:var(--mono);font-size:13px;color:var(--mut);text-align:center}
+  .ty{color:var(--mut);font-size:12.5px}
+  .ty .race{display:inline-block;font-size:10px;padding:1px 6px;border-radius:4px;margin-left:6px;
+    border:1px solid var(--hair);color:var(--faint);letter-spacing:.04em}
+  .clz{display:flex;flex-wrap:wrap;gap:4px}
+  .ctag{font-size:11px;padding:2px 7px;border-radius:5px;background:#1a2032;color:var(--mut);border:1px solid #232c41}
+  .ctag.all{color:var(--gold);border-color:#4a3f22;background:#221d11}
+  .stat{font-family:var(--mono);font-size:12px;color:var(--mut);text-align:right}
+  .stat .k{color:var(--faint)}
+
+  /* detail */
+  .detail{grid-column:1/-1;padding:6px 4px 16px 60px;}
+  .detail .dgrid{display:flex;gap:30px;flex-wrap:wrap}
+  .detail .big{width:64px;height:64px;border-radius:9px;border:1px solid #2a3349;background:#0a0d14;object-fit:cover}
+  .detail .col{min-width:200px}
+  .detail h4{margin:0 0 8px;font-family:var(--serif);font-size:15px;color:var(--gold);font-weight:600;letter-spacing:.02em}
+  .detail .desc{color:var(--ink);max-width:560px;line-height:1.6}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:3px 18px;font-size:13px}
+  .kv dt{color:var(--faint)}
+  .kv dd{margin:0;font-family:var(--mono);color:var(--mut)}
+  .pillrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+
+  /* states */
+  .sentinel{height:1px}
+  .loadmsg,.empty,.errbox{max-width:1240px;margin:40px auto;padding:0 22px;color:var(--mut);text-align:center}
+  .errbox{color:var(--ink);background:var(--panel);border:1px solid var(--hair);border-radius:var(--radius);
+    padding:26px;max-width:640px;text-align:left}
+  .errbox h3{margin:0 0 10px;color:var(--q-mythic);font-family:var(--serif)}
+  .errbox code{background:#0a0d14;border:1px solid var(--hair);border-radius:6px;padding:2px 8px;
+    font-family:var(--mono);color:var(--cyan);display:inline-block;margin:4px 0}
+  .spin{display:inline-block;width:18px;height:18px;border:2px solid var(--hair);border-top-color:var(--cyan);
+    border-radius:50%;animation:sp .8s linear infinite;vertical-align:-3px;margin-right:8px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+
+  footer{max-width:1240px;margin:0 auto;padding:24px 22px 50px;color:var(--faint);font-size:12px;
+    border-top:1px solid var(--hair);text-align:center;letter-spacing:.04em}
+
+  @media (max-width:860px){
+    .head-row{display:none}
+    .row{grid-template-columns:42px 1fr auto;grid-template-areas:"i n l" "i t s" "i c c";gap:3px 12px;padding:11px 10px}
+    .row .ic{grid-area:i;align-self:start}
+    .row .nm{grid-area:n}.row .lv{grid-area:l;text-align:right}
+    .row .ty{grid-area:t}.row .clz{grid-area:c;margin-top:3px}.row .stat{grid-area:s;text-align:right}
+    .detail{padding-left:10px}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="mast">
+  <div class="mast-in">
+    <div class="brand">
+      <h1><span class="a">Atreia</span> Codex</h1>
+      <span class="sub" data-t="sub">Waffen · Rüstung · Fertigkeiten</span>
+      <span class="spacer"></span>
+      <div class="lang" role="group" aria-label="Sprache / Language">
+        <button id="lng-de" class="on" onclick="setLang('de')">DE</button>
+        <button id="lng-en" onclick="setLang('en')">EN</button>
+      </div>
+    </div>
+    <nav class="tabs" id="tabs">
+      <button data-cat="weapons" class="on" onclick="setCat('weapons')"><span data-t="t_weapons">Waffen</span> <span class="cnt" id="cnt-weapons">–</span></button>
+      <button data-cat="armor" onclick="setCat('armor')"><span data-t="t_armor">Rüstung</span> <span class="cnt" id="cnt-armor">–</span></button>
+      <button data-cat="skills" onclick="setCat('skills')"><span data-t="t_skills">Fertigkeiten</span> <span class="cnt" id="cnt-skills">–</span></button>
+    </nav>
+  </div>
+</header>
+
+<section class="controls">
+  <div class="searchrow">
+    <div class="search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="q" type="search" autocomplete="off" placeholder="Suchen…" oninput="onSearch()">
+    </div>
+    <select id="f-type" onchange="apply()"></select>
+    <select id="f-qual" onchange="apply()"></select>
+    <div class="lvl">
+      <span data-t="lvl">Stufe</span>
+      <input id="lv-min" type="number" min="0" max="100" placeholder="0" oninput="apply()">
+      <span>–</span>
+      <input id="lv-max" type="number" min="0" max="100" placeholder="∞" oninput="apply()">
+    </div>
+    <select id="f-sort" onchange="apply()">
+      <option value="lv">Stufe ↑</option>
+      <option value="lv-">Stufe ↓</option>
+      <option value="name">Name A–Z</option>
+      <option value="qual">Qualität</option>
+    </select>
+  </div>
+  <div class="classes" id="classbar"></div>
+</section>
+
+<div class="meta">
+  <span><b id="shown">0</b> <span data-t="of">von</span> <b id="total">0</b> <span data-t="entries">Einträgen</span></span>
+  <span id="active-class" style="color:var(--gold)"></span>
+</div>
+
+<main class="list" id="list"></main>
+<div class="sentinel" id="sentinel"></div>
+
+<footer>
+  Atreia Codex · Generiert aus AION-Clientdaten · Icons: lokaler <code style="font-family:var(--mono)">icons/</code>-Ordner
+</footer>
+
+<script>
+/* ---------------- i18n ---------------- */
+const T={
+  de:{sub:"Waffen · Rüstung · Fertigkeiten",t_weapons:"Waffen",t_armor:"Rüstung",t_skills:"Fertigkeiten",
+      lvl:"Stufe",of:"von",entries:"Einträgen",search:"Suchen…",
+      h_name:"Name",h_lv:"Stufe",h_type:"Typ",h_class:"Klassen",h_stat:"Werte",
+      allType:"Alle Typen",allQual:"Alle Qualitäten",allClasses:"Alle Klassen",noClass:"Klassenlos",
+      anyClass:"Alle Klassen",empty:"Keine Treffer. Filter anpassen.",
+      sortLvUp:"Stufe ↑",sortLvDn:"Stufe ↓",sortName:"Name A–Z",sortQual:"Qualität",
+      desc:"Beschreibung",noDesc:"Keine Beschreibung hinterlegt.",
+      activation:"Aktivierung",category:"Kategorie",skilltype:"Typ",
+      id:"ID",slot:"Slot",quality:"Qualität",race:"Volk",itemtype:"Item-Typ",learn:"Erlernbar ab Stufe"},
+  en:{sub:"Weapons · Armor · Skills",t_weapons:"Weapons",t_armor:"Armor",t_skills:"Skills",
+      lvl:"Level",of:"of",entries:"entries",search:"Search…",
+      h_name:"Name",h_lv:"Lv",h_type:"Type",h_class:"Classes",h_stat:"Stats",
+      allType:"All types",allQual:"All qualities",allClasses:"All classes",noClass:"No class",
+      anyClass:"All classes",empty:"No matches. Adjust the filters.",
+      sortLvUp:"Level ↑",sortLvDn:"Level ↓",sortName:"Name A–Z",sortQual:"Quality",
+      desc:"Description",noDesc:"No description available.",
+      activation:"Activation",category:"Category",skilltype:"Type",
+      id:"ID",slot:"Slot",quality:"Quality",race:"Race",itemtype:"Item type",learn:"Learned at level"}
+};
+const QUAL_ORDER=["common","rare","unique","legend","epic","mythic"];
+const QUAL_LBL={de:{common:"Normal",rare:"Höherwertig",unique:"Sagenhaft",legend:"Legendär",epic:"Episch",mythic:"Mythisch"},
+                en:{common:"Common",rare:"Rare",unique:"Unique",legend:"Legend",epic:"Epic",mythic:"Mythic"}};
+const RACE_LBL={de:{l:"Elyos",d:"Asmodier",b:"Beide"},en:{l:"Elyos",d:"Asmodian",b:"Both"}};
+const TYPE_LBL={
+  "1h_sword":{de:"Einhandschwert",en:"1H Sword"},"2h_sword":{de:"Zweihandschwert",en:"2H Sword"},
+  "1h_dagger":{de:"Dolch",en:"Dagger"},"1h_mace":{de:"Streitkolben",en:"Mace"},
+  "2h_polearm":{de:"Stangenwaffe",en:"Polearm"},"2h_staff":{de:"Stab",en:"Staff"},
+  "bow":{de:"Bogen",en:"Bow"},"2h_book":{de:"Zauberbuch",en:"Spellbook"},
+  "2h_orb":{de:"Kugel",en:"Orb"},"2h_harp":{de:"Harfe",en:"Harp"},
+  "1h_gun":{de:"Pistole",en:"Gun"},"2h_cannon":{de:"Kanone",en:"Cannon"},
+  "2h_keyblade":{de:"Schlüsselklinge",en:"Keyblade"},
+  "2h_toolrod":{de:"Angel",en:"Fishing Rod"},"1h_toolhoe":{de:"Hacke",en:"Hoe"},
+  "2h_toolpick":{de:"Spitzhacke",en:"Pickaxe"},"noweapon":{de:"Waffenlos",en:"No weapon"},
+  "clothes":{de:"Stoff",en:"Cloth"},"robe":{de:"Robe",en:"Robe"},"leather":{de:"Leder",en:"Leather"},
+  "chain":{de:"Kette",en:"Chain"},"plate":{de:"Platte",en:"Plate"},"no_armor":{de:"Accessoire",en:"Accessory"}
+};
+const STAT_LBL={
+  min_damage:{de:"Min.Schaden",en:"Min Dmg"},max_damage:{de:"Max.Schaden",en:"Max Dmg"},
+  attack_delay:{de:"Angriffstempo",en:"Atk Speed"},attack_range:{de:"Reichweite",en:"Range"},
+  hit_count:{de:"Treffer",en:"Hits"},critical:{de:"Krit.",en:"Crit"},hit_accuracy:{de:"Treffsicherh.",en:"Accuracy"},
+  magical_skill_boost:{de:"Magieboost",en:"Magic Boost"},parry:{de:"Parade",en:"Parry"},block:{de:"Block",en:"Block"},
+  evasion:{de:"Ausweichen",en:"Evasion"},dodge:{de:"Ausweichen",en:"Dodge"},
+  physical_defend:{de:"Phys. Vert.",en:"Phys Def"},magical_resist:{de:"Mag. Wid.",en:"Magic Res"},
+  physical_attack:{de:"Phys. Angr.",en:"Phys Atk"},magical_attack:{de:"Mag. Angr.",en:"Magic Atk"},
+  str:{de:"STÄ",en:"STR"},agi:{de:"GES",en:"AGI"},kno:{de:"WIS",en:"KNO"},will:{de:"WIL",en:"WILL"},
+  hp:{de:"LP",en:"HP"},mp:{de:"MP",en:"MP"},accuracy:{de:"Genauigk.",en:"Accuracy"}
+};
+
+let LANG='de';
+try{const s=localStorage.getItem('atreia-lang');if(s)LANG=s;}catch(e){}
+
+/* --------------- state --------------- */
+let META=null;
+const CACHE={weapons:null,armor:null,skills:null};
+let CAT='weapons';
+let activeClass='any';           // 'any' | class code
+let filtered=[];
+let renderN=0;
+const PAGE=60;
+
+/* --------------- boot --------------- */
+init();
+async function init(){
+  try{
+    META=await fetchJSON('data/meta.json');
+  }catch(err){return showLoadError(err);}
+  document.getElementById('cnt-weapons').textContent=fmt(META.counts.weapons);
+  document.getElementById('cnt-armor').textContent=fmt(META.counts.armor);
+  document.getElementById('cnt-skills').textContent=fmt(META.counts.skills);
+  buildClassBar();
+  applyLang();
+  syncLangUI();
+  setupInfinite();
+  await loadCat('weapons');
+}
+
+function fetchJSON(u){
+  return fetch(u).then(r=>{if(!r.ok)throw new Error(r.status+' '+u);return r.json();});
+}
+
+async function loadCat(cat){
+  CAT=cat;
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.cat===cat));
+  if(!CACHE[cat]){
+    showLoading();
+    try{CACHE[cat]=await fetchJSON('data/'+cat+'.json');}
+    catch(err){return showLoadError(err);}
+  }
+  buildTypeFilter();
+  buildQualFilter();
+  apply();
+}
+function setCat(c){if(c!==CAT)loadCat(c);}
+
+/* --------------- class bar --------------- */
+function buildClassBar(){
+  const bar=document.getElementById('classbar');
+  bar.innerHTML='';
+  const any=document.createElement('button');
+  any.className='chip all on';any.dataset.cls='any';
+  any.onclick=()=>pickClass('any');
+  bar.appendChild(any);
+  // group specialized by base
+  META.order.forEach(code=>{
+    const c=META.classes[code];
+    const b=document.createElement('button');
+    b.className='chip';b.dataset.cls=code;
+    b.onclick=()=>pickClass(code);
+    b.innerHTML='<span class="lbl"></span>';
+    bar.appendChild(b);
+  });
+  renderClassLabels();
+}
+function renderClassLabels(){
+  const bar=document.getElementById('classbar');
+  bar.querySelector('[data-cls="any"]').textContent=T[LANG].anyClass;
+  META.order.forEach(code=>{
+    const c=META.classes[code];
+    const baseName=META.classes[code].base;
+    bar.querySelector('[data-cls="'+code+'"]').innerHTML=
+      c[LANG]+' <span class="base">· '+ (T[LANG][baseName]||baseLabel(baseName)) +'</span>';
+  });
+}
+const BASE_LBL={de:{warrior:"Krieger",scout:"Späher",mage:"Magier",cleric:"Priester",engineer:"Ingenieur",artist:"Künstler"},
+                en:{warrior:"Warrior",scout:"Scout",mage:"Mage",cleric:"Priest",engineer:"Technist",artist:"Muse"}};
+function baseLabel(b){return BASE_LBL[LANG][b]||b;}
+function pickClass(code){
+  activeClass=code;
+  document.querySelectorAll('#classbar .chip').forEach(c=>c.classList.toggle('on',c.dataset.cls===code));
+  apply();
+}
+
+/* --------------- filters --------------- */
+function buildTypeFilter(){
+  const sel=document.getElementById('f-type');const data=CACHE[CAT];
+  const cur=sel.value;
+  const types=[...new Set(data.map(r=>r.t).filter(Boolean))];
+  // order: known first
+  types.sort((a,b)=>(typeName(a)).localeCompare(typeName(b),LANG));
+  sel.innerHTML='<option value="">'+T[LANG].allType+'</option>'+
+    types.map(t=>'<option value="'+t+'">'+typeName(t)+'</option>').join('');
+  if([...sel.options].some(o=>o.value===cur))sel.value=cur;else sel.value='';
+  // skills have no item type list worth showing -> hide for skills
+  sel.style.display=(CAT==='skills')?'none':'';
+}
+function buildQualFilter(){
+  const sel=document.getElementById('f-qual');
+  if(CAT==='skills'){sel.style.display='none';return;}
+  sel.style.display='';
+  const cur=sel.value;
+  sel.innerHTML='<option value="">'+T[LANG].allQual+'</option>'+
+    QUAL_ORDER.map(q=>'<option value="'+q+'">'+QUAL_LBL[LANG][q]+'</option>').join('');
+  if([...sel.options].some(o=>o.value===cur))sel.value=cur;else sel.value='';
+}
+function typeName(t){return (TYPE_LBL[t]&&TYPE_LBL[t][LANG])||t;}
+
+let searchTimer=null;
+function onSearch(){clearTimeout(searchTimer);searchTimer=setTimeout(apply,160);}
+
+function apply(){
+  const data=CACHE[CAT]||[];
+  const q=document.getElementById('q').value.trim().toLowerCase();
+  const ft=document.getElementById('f-type').value;
+  const fq=document.getElementById('f-qual').value;
+  const lmin=parseInt(document.getElementById('lv-min').value)||0;
+  const lmax=parseInt(document.getElementById('lv-max').value)||999;
+  const sort=document.getElementById('f-sort').value;
+
+  filtered=data.filter(r=>{
+    if(ft && r.t!==ft)return false;
+    if(fq && r.q!==fq)return false;
+    if((r.lv||0)<lmin||(r.lv||0)>lmax)return false;
+    if(activeClass!=='any'){
+      const c=r.c||[];
+      if(!(c.includes(activeClass)||c.includes('*')))return false;
+    }
+    if(q){
+      if(!((r.de||'').toLowerCase().includes(q)||(r.en||'').toLowerCase().includes(q)))return false;
+    }
+    return true;
+  });
+
+  filtered.sort((a,b)=>{
+    if(sort==='name')return name(a).localeCompare(name(b),LANG);
+    if(sort==='qual')return (QUAL_ORDER.indexOf(b.q)-QUAL_ORDER.indexOf(a.q))||((a.lv||0)-(b.lv||0));
+    if(sort==='lv-')return (b.lv||0)-(a.lv||0)||name(a).localeCompare(name(b));
+    return (a.lv||0)-(b.lv||0)||name(a).localeCompare(name(b));
+  });
+
+  document.getElementById('total').textContent=fmt((CACHE[CAT]||[]).length);
+  const ac=document.getElementById('active-class');
+  ac.textContent=activeClass==='any'?'':'· '+META.classes[activeClass][LANG];
+  renderHead();
+  resetRender();
+}
+
+/* --------------- rendering --------------- */
+function name(r){return (LANG==='de'?(r.de||r.en):(r.en||r.de))||'';}
+function isRaw(s){return /^[0-9]+(\.[0-9]+)?_|^STR_|_G\d+$/.test(s)||/^[A-Za-z0-9_]+$/.test(s)&&s.length>14&&s.includes('_');}
+
+function renderHead(){
+  const list=document.getElementById('list');
+  const t=T[LANG];
+  const cols=CAT==='skills'
+    ? ['','',t.h_name,t.h_lv,t.h_type,t.h_class,'']
+    : ['',t.h_name,t.h_lv,t.h_type,t.h_class,t.h_stat];
+  // header markup matches grid
+  list.dataset.cat=CAT;
+}
+function resetRender(){
+  const list=document.getElementById('list');
+  list.innerHTML='';
+  if(filtered.length===0){
+    list.innerHTML='<div class="empty">'+T[LANG].empty+'</div>';
+    document.getElementById('shown').textContent='0';
+    return;
+  }
+  // head
+  const h=document.createElement('div');h.className='head-row';
+  const t=T[LANG];
+  h.innerHTML='<span></span><span>'+t.h_name+'</span><span style="text-align:center">'+t.h_lv+
+    '</span><span>'+t.h_type+'</span><span>'+t.h_class+'</span><span style="text-align:right">'+
+    (CAT==='skills'?t.activation:t.h_stat)+'</span>';
+  list.appendChild(h);
+  renderN=0;
+  renderMore();
+}
+function renderMore(){
+  const list=document.getElementById('list');
+  const end=Math.min(renderN+PAGE,filtered.length);
+  const frag=document.createDocumentFragment();
+  for(let i=renderN;i<end;i++)frag.appendChild(rowEl(filtered[i],i));
+  list.appendChild(frag);
+  renderN=end;
+  document.getElementById('shown').textContent=fmt(renderN);
+}
+function rowEl(r,idx){
+  const row=document.createElement('div');row.className='row';row.tabIndex=0;
+  const nm=name(r);
+  const raw=isRaw(nm);
+  const qcol='var(--q-'+(r.q||'common')+')';
+  // icon
+  const icHtml=r.ic?'<img class="ic" loading="lazy" src="icons/'+r.ic+'" alt="" onerror="this.replaceWith(phIc())">'
+                   :'<span class="ic ph">—</span>';
+  // class tags
+  const ctags=classTags(r);
+  // stat / activation column
+  let statHtml='';
+  if(CAT==='skills'){
+    statHtml='<span class="stat">'+(skillActLabel(r))+'</span>';
+  }else{
+    statHtml='<span class="stat">'+miniStats(r)+'</span>';
+  }
+  const typ=CAT==='skills'?(r.cat&&r.cat!=='None'?r.cat:(r.ty||'')):typeName(r.t)+raceTag(r);
+  row.innerHTML=
+    icHtml+
+    '<span class="nm" style="color:'+qcol+'">'+esc(nm)+(raw?' <span class="raw">(intern)</span>':'')+'</span>'+
+    '<span class="lv">'+(r.lv||'—')+'</span>'+
+    '<span class="ty">'+typ+'</span>'+
+    '<span class="clz">'+ctags+'</span>'+
+    statHtml;
+  row.onclick=()=>toggleDetail(row,r);
+  row.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggleDetail(row,r);}};
+  return row;
+}
+function phIc(){const s=document.createElement('span');s.className='ic ph';s.textContent='—';return s;}
+function raceTag(r){return r.r&&r.r!=='b'?' <span class="race">'+RACE_LBL[LANG][r.r]+'</span>':'';}
+function classTags(r){
+  const c=r.c||[];
+  if(c.includes('*'))return '<span class="ctag all">'+T[LANG].allClasses+'</span>';
+  if(c.length===0)return '<span class="ctag" style="opacity:.5">'+T[LANG].noClass+'</span>';
+  return c.map(code=>'<span class="ctag">'+(META.classes[code]?META.classes[code][LANG]:code)+'</span>').join('');
+}
+function miniStats(r){
+  const s=r.st||{};
+  if(CAT==='weapons'){
+    if(s.min_damage!=null)return '<span class="k">DMG</span> '+s.min_damage+'–'+(s.max_damage||s.min_damage);
+  }else{
+    const parts=[];
+    if(s.physical_defend)parts.push('<span class="k">DEF</span> '+s.physical_defend);
+    if(s.magical_resist)parts.push('<span class="k">MR</span> '+s.magical_resist);
+    if(parts.length)return parts.join('  ');
+  }
+  return '<span style="opacity:.4">—</span>';
+}
+function skillActLabel(r){
+  const m={de:{Passive:'Passiv',Active:'Aktiv',Toggle:'Umschalt'},en:{Passive:'Passive',Active:'Active',Toggle:'Toggle'}};
+  return (m[LANG][r.act]||r.act||'');
+}
+
+/* detail expansion */
+function toggleDetail(row,r){
+  const next=row.nextSibling;
+  if(next&&next.classList&&next.classList.contains('detail')){next.remove();row.classList.remove('open');return;}
+  document.querySelectorAll('.detail').forEach(d=>d.remove());
+  document.querySelectorAll('.row.open').forEach(x=>x.classList.remove('open'));
+  row.classList.add('open');
+  const d=document.createElement('div');d.className='detail';
+  d.innerHTML=detailHtml(r);
+  row.after(d);
+}
+function detailHtml(r){
+  const t=T[LANG];
+  const big=r.ic?'<img class="big" src="icons/'+r.ic+'" alt="" onerror="this.style.display=\'none\'">':'';
+  if(CAT==='skills'){
+    const desc=(LANG==='de'?(r.dde||r.den):(r.den||r.dde))||'';
+    return '<div class="dgrid">'+big+
+      '<div class="col"><h4>'+t.desc+'</h4><div class="desc">'+(desc?esc(desc):'<span style="color:var(--faint)">'+t.noDesc+'</span>')+'</div></div>'+
+      '<div class="col"><dl class="kv">'+
+      kv(t.id,r.id)+kv(t.skilltype,r.ty)+kv(t.activation,skillActLabel(r))+
+      kv(t.category,r.cat&&r.cat!=='None'?r.cat:'—')+kv(t.learn,r.lv||'—')+
+      '</dl><div class="pillrow">'+classTags(r)+'</div></div></div>';
+  }
+  // item
+  const st=r.st||{};
+  const statRows=Object.keys(st).map(k=>kv((STAT_LBL[k]&&STAT_LBL[k][LANG])||k,st[k])).join('');
+  return '<div class="dgrid">'+big+
+    '<div class="col"><dl class="kv">'+
+    kv(t.id,r.id)+kv(t.itemtype,r.it||'—')+kv(t.slot,r.sl||'—')+
+    kv(t.quality,QUAL_LBL[LANG][r.q]||r.q)+kv('Lv',r.lv||'—')+kv(t.race,RACE_LBL[LANG][r.r]||'—')+
+    '</dl></div>'+
+    (statRows?'<div class="col"><h4>'+t.h_stat+'</h4><dl class="kv">'+statRows+'</dl></div>':'')+
+    '<div class="col"><h4>'+t.h_class+'</h4><div class="pillrow">'+classTags(r)+'</div></div></div>';
+}
+function kv(k,v){return '<dt>'+esc(String(k))+'</dt><dd>'+esc(String(v))+'</dd>';}
+
+/* infinite scroll */
+function setupInfinite(){
+  const io=new IntersectionObserver(es=>{
+    es.forEach(e=>{if(e.isIntersecting&&renderN<filtered.length)renderMore();});
+  },{rootMargin:'600px'});
+  io.observe(document.getElementById('sentinel'));
+}
+
+/* --------------- language --------------- */
+function setLang(l){
+  LANG=l;try{localStorage.setItem('atreia-lang',l);}catch(e){}
+  syncLangUI();
+  applyLang();renderClassLabels();
+  buildTypeFilter();buildQualFilter();
+  apply();
+}
+function syncLangUI(){
+  const l=LANG;
+  document.documentElement.lang=l;
+  document.getElementById('lng-de').classList.toggle('on',l==='de');
+  document.getElementById('lng-en').classList.toggle('on',l==='en');
+  document.getElementById('q').placeholder=T[l].search;
+  const so=document.getElementById('f-sort');
+  so.options[0].text=T[l].sortLvUp;so.options[1].text=T[l].sortLvDn;
+  so.options[2].text=T[l].sortName;so.options[3].text=T[l].sortQual;
+}
+function applyLang(){
+  document.querySelectorAll('[data-t]').forEach(el=>{const k=el.dataset.t;if(T[LANG][k])el.textContent=T[LANG][k];});
+  document.getElementById('q').placeholder=T[LANG].search;
+}
+
+/* --------------- helpers --------------- */
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function fmt(n){return (n||0).toLocaleString(LANG==='de'?'de-DE':'en-US');}
+function showLoading(){document.getElementById('list').innerHTML='<div class="loadmsg"><span class="spin"></span>'+(LANG==='de'?'Lade Daten…':'Loading…')+'</div>';}
+function showLoadError(err){
+  const local=location.protocol==='file:';
+  document.getElementById('list').innerHTML='<div class="errbox"><h3>'+(LANG==='de'?'Daten konnten nicht geladen werden':'Could not load data')+'</h3>'+
+    (local
+      ? '<p>'+(LANG==='de'
+          ?'Der Browser blockiert das Laden lokaler Dateien per <code>file://</code>. Starte einen kleinen lokalen Server im Ordner dieser Seite:'
+          :'The browser blocks loading local files via <code>file://</code>. Start a small local server in this page\'s folder:')+
+        '</p><code>python3 -m http.server 8000</code><p>'+(LANG==='de'
+          ?'und öffne dann <code>http://localhost:8000/atreia_codex.html</code>'
+          :'then open <code>http://localhost:8000/atreia_codex.html</code>')+'</p>'
+      : '<p>'+esc(err.message||'')+'</p>')+
+    '</div>';
+}
+</script>
+</body>
+</html>
