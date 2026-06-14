@@ -8,38 +8,13 @@ Inhalt:
   data/               – die generierten JSON-Daten (Waffen, Rüstung, Skills, Meta)
   icons/              – die referenzierten Item-/Skill-Icons (PNG)
 
-## Starten (wichtig!)
 
-Moderne Browser blockieren das Laden lokaler JSON-Dateien per Doppelklick (file://).
-Starte deshalb einen winzigen lokalen Server IM ORDNER dieser Datei:
-
-    python3 -m http.server 8000
-
-und öffne dann im Browser:
-
-    http://localhost:8000/atreia_codex.html
-
-Der Ordner `data/` und der Ordner `icons/` müssen immer NEBEN der HTML-Datei liegen.
-
----
 
 # Atreia Codex — AION Database (English)
 
 A searchable database (weapons, armor, skills) built from the AION client data,
 with a DE/EN toggle, class/type/quality/level filters and a detail view.
 
-## Run it
-
-Browsers block loading local JSON via double-click (file://). Start a tiny local
-server in this folder instead:
-
-    python3 -m http.server 8000
-
-then open:
-
-    http://localhost:8000/atreia_codex.html
-
-Keep the `data/` and `icons/` folders next to the HTML file.
 
 ---
 
